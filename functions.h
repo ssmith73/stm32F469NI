@@ -186,6 +186,7 @@ void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
 void    usart3_write(uint32_t c);
 uint8_t usart3_read(void);
+void    usart3_init(void);
 	
 
 uint8_t usart3_read(void) {
@@ -273,3 +274,56 @@ void driveLed(colours_t colour, pinState_t state) {
         break;
     }
 }
+void usart3_init(){
+
+    uint32_t *ptr;
+    //Enable AHB1 clock for GPIO (port B)
+    //Set RCC_AHB1ENR[1]
+    ptr  = RCC_AHB1ENR_ADDR;
+    *ptr |= 0x00000002; 
+
+    //Enable GPIOB clock - APB1
+    //Addresses of RCC 0x4002_3800→3BFF 
+    //set RCC_APB1ENR[18]
+    ptr = (uint32_t *) 0x40023840;
+    *ptr |= 0x00040000;
+
+    //Configure B11 for USART3 Tx GPIOx_AFH[11]
+    //Configure B10 for USART3 Rx GPIOx_AFH[10]
+    //0x4002.0400 - 0x4002 07FF GPIOB
+    //GPIOB 4002.0400, offset for AFH 0x24
+    ptr =  (uint32_t *)0x40020424;
+    *ptr |= 0x00007700;
+
+    //Mode bits for P10 to AF, offset for GPIOx_MODER 0x00
+    //Mode bits for P11 to AF, offset for GPIOx_MODER 0x00
+    ptr = (uint32_t *) 0x40020400;
+    *ptr |= 0x00A00000;
+
+    //Set baud rate = 11500 to match ST LINK
+    //USART3 base addr = 0x4000.4800, offset for USART_BRR 0x8
+    //baud rate: 115200, OSR 16, 8bits, no parity,no flow control
+    ptr =  (uint32_t *)0x40004808;
+    *ptr |= 0x0000008B;
+
+    //USART3_CR1 - set transmit enable, TE(bit 3), offset 0x0c
+    //USART3_CR1 - set receive  enable, TE(bit 2), offset 0x0c
+    ptr   =  (uint32_t *)0x4000480C;
+    *ptr |= 0x0000000C;
+
+    //USART3_CR2 - 1 stop bit[13:12], offset 0x10
+    ptr   =  (uint32_t *)0x40004810;
+    *ptr |= 0x00000000;
+
+    //USART3_CR3 - no flow-control, offset 0x14
+    ptr   =  (uint32_t *)0x40004814;
+    *ptr |= 0x00000000;
+
+    //USART3_CR1 - enable USART3 - [13]), offset 0x0c
+    ptr   =  (uint32_t *)0x4000480C;
+    *ptr |= 0x00002000;
+
+}
+
+
+
