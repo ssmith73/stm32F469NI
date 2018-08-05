@@ -184,7 +184,7 @@ typedef enum {SET,CLEAR} pinState_t;
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
-void    usart3_write(uint32_t c);
+uint8_t    usart3_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
 	
@@ -199,13 +199,13 @@ uint8_t usart3_read(void) {
 
 }
 
-void usart3_write(uint32_t ch) {
+uint8_t usart3_write(uint32_t ch) {
     uint32_t *ptr = (uint32_t *)0x40004800; //point to USART_SR
     uint32_t *usartDrPtr =(uint32_t *)0x40004804; //point to USART_DR
     
     while(!(*ptr & 0x00000080)) {} //wait until Tx buffer is empty
 
-    *usartDrPtr = (ch & 0xff); 
+    return *usartDrPtr = (ch & 0xff); 
 }
 
 // (Rough) delay in mS, off a 16MHz delay

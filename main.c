@@ -177,34 +177,53 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  */
 
 #include<stdint.h>
+#include<stdio.h>
 #include "functions.h"
 
 #define DELAY_IN_MS 250
 	
 int main(void) {
 
-    /*
-        Send a string 'Sean Smith!' to UART3 - which is connected
-        on the STM32F469NI Discovery board to portB 10/11 (Rx/Tx)
-
-        By default clocks runs at 16MHZ, 
-        configure UART for 9600 Baurd
-        PB11 is Tx - using AF7
-     */
-
-    uint8_t ch;
+    int n;
+    char str[80];
     usart3_init();
-    initLeds();
     
+    printf("Test stdio library console I/O functions\r\n");
 
     while(1) {
-        ch = usart3_read();
-        if(ch == '1')
-          driveLed(RED,SET);
-        if(ch == '0')
-          driveLed(RED,CLEAR);
-        usart3_write(ch);
-        usart3_write('\n');
-        delayMs(DELAY_IN_MS);
+        printf("Please enter a number: ");
+        scanf("%d",&n);
+        printf("The number entered is %d\r\n",n);
+
+        printf("Please type a character string: ");
+        gets(str);
+        printf("The character string entered is: ");
+        puts(str);
+
+        printf("\r\n");
+
     }
+}
+
+struct __FILE {int handle;};
+
+FILE __stdin  = {0};
+FILE __stdout = {1};
+FILE __stderr = {2};
+
+int fgetc(FILE *f) {
+    int c;
+
+6    c = usart3_read();
+
+    if(c == '\r') {
+        usart3_write(c);
+        c = '\n';
+    }
+    usart3_write(c);
+    return c;
+}
+
+int fputc(int c, FILE *f){
+    return usart3_write(c);
 }
