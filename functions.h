@@ -184,9 +184,10 @@ typedef enum {SET,CLEAR} pinState_t;
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
-uint8_t    usart2_write(uint32_t c);
+uint8_t usart2_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
+void    dlyMs(uint16_t numMs); //This uses the SysTick
 	
 
 uint8_t usart3_read(void) {
@@ -326,4 +327,28 @@ void usart3_init(){
 }
 
 
+void dlyMs(uint16_t numMs) {
+
+    // delay = N / SYSCLK
+    // N = delay * SYSCLK = 0.001Sec * 16MHz) = 16000 = 0x3E80
+    
+    uint32_t *ptr;
+    
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_VAL);
+    *ptr = 0x0; //clear the current value register
+
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_LOAD);
+    *ptr = 0x3E80 * numMs; //set reload value for 1ms
+
+    ptr = (uint32_t *)SYSTICK_BASE + STK_CTRL;
+    *ptr = 0x5; //Enable timer, no interupt, clkSource=ProcessorClk (AHB)
+
+    
+    //check STK_CTRL[16] - countFlag, which returns 1 if timer counted to 
+    //zero since the last time it was read
+    while(!(*ptr & 0x00010000)){};
+
+    *ptr = 0x0;
+
+}
 

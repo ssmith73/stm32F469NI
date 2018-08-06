@@ -186,6 +186,8 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 #define STK_VAL         (uint32_t )0x08
 #define STK_CALIB       (uint32_t )0x0C
 	
+void dlyMs(uint16_t numMs);
+
 int main(void) {
 
     /*
@@ -209,23 +211,36 @@ int main(void) {
     *ptr = 0x5; //Enable timer, no interupt, clkSource=ProcessorClk (AHB)
 
     while(1) {
-        //Take STK_VAL[23] and shift it to the LED (bit 3), port K
 
-          pinState_t states;
-          uint32_t *timerValAddr = (uint32_t *)(SYSTICK_BASE+STK_VAL);
-
-           
-          states = (*timerValAddr >> 23) ? SET : CLEAR;
-          driveLed(BLUE,states);
-
-          states = (*timerValAddr >> 22) ? SET : CLEAR;
-          driveLed(RED,states);
-
-          states = (*timerValAddr >> 21) ? SET : CLEAR;
-          driveLed(ORANGE,states);
-
-          states = (*timerValAddr >> 20) ? SET : CLEAR;
-          driveLed(GREEN,states);
+          driveLed(BLUE,CLEAR);
+          dlyMs(1000);
+          driveLed(BLUE,SET);
+          dlyMs(1000);
     }
 }
 
+void dlyMs(uint16_t numMs) {
+
+    // delay = N / SYSCLK
+    // N = delay * SYSCLK = 0.001Sec * 16MHz) = 16000 = 0x3E80
+    
+    uint32_t *ptr;
+    
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_VAL);
+    *ptr = 0x0; //clear the current value register
+
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_LOAD);
+    *ptr = 0x3E80 * numMs; //set reload value for 1ms
+
+    ptr = (uint32_t *)SYSTICK_BASE + STK_CTRL;
+    *ptr = 0x5; //Enable timer, no interupt, clkSource=ProcessorClk (AHB)
+
+    
+    //check STK_CTRL[16] - countFlag, which returns 1 if timer counted to 
+    //zero since the last time it was read
+    while(!(*ptr & 0x00010000)){};
+
+    *ptr = 0x0;
+    
+
+}
