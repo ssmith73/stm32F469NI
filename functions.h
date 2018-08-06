@@ -180,6 +180,11 @@ typedef enum {RED,GREEN,ORANGE,BLUE} colours_t;
 typedef enum {SET,CLEAR} pinState_t;
 
 #define RCC_AHB1ENR_ADDR    (uint32_t *)0x40023830
+#define SYSTICK_BASE    (uint32_t )0xE000E010
+#define STK_CTRL        (uint32_t )0x00
+#define STK_LOAD        (uint32_t )0x04
+#define STK_VAL         (uint32_t )0x08
+#define STK_CALIB       (uint32_t )0x0C
 
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
@@ -338,7 +343,7 @@ void dlyMs(uint16_t numMs) {
     *ptr = 0x0; //clear the current value register
 
     ptr = (uint32_t *)(SYSTICK_BASE +  STK_LOAD);
-    *ptr = 0x3E80 * numMs; //set reload value for 1ms
+    *ptr = 0x3E80; //set reload value for 1ms
 
     ptr = (uint32_t *)SYSTICK_BASE + STK_CTRL;
     *ptr = 0x5; //Enable timer, no interupt, clkSource=ProcessorClk (AHB)
@@ -346,7 +351,8 @@ void dlyMs(uint16_t numMs) {
     
     //check STK_CTRL[16] - countFlag, which returns 1 if timer counted to 
     //zero since the last time it was read
-    while(!(*ptr & 0x00010000)){};
+    for(uint8_t i=0;i<numMs;i++)
+        while(!(*ptr & 0x00010000)){};
 
     *ptr = 0x0;
 
