@@ -177,53 +177,55 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  */
 
 #include<stdint.h>
-#include<stdio.h>
 #include "functions.h"
 
 #define DELAY_IN_MS 250
+#define SYSTICK_BASE    (uint32_t )0xE000E010
+#define STK_CTRL        (uint32_t )0x00
+#define STK_LOAD        (uint32_t )0x04
+#define STK_VAL         (uint32_t )0x08
+#define STK_CALIB       (uint32_t )0x0C
 	
 int main(void) {
 
-    int n;
-    char str[80];
+    /*
+        This program configures the SysTick to be a 24-bit free running
+        down-counter. Bit 23 of SysTick current value is written to the
+        Blue (PK3) LED continuously.
+
+        SysTick is based on system clock running at 16MHz.
+        So, bit 23 of SysTick current value toggles about 1Hz
+        16e6Hz/2^23 = 1.907Hz (period)
+     */
     usart3_init();
+    initLeds();
     
-    printf("Test stdio library console I/O functions\r\n");
+    //Set reload value to be max value
+    uint32_t *ptr;
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_LOAD);
+    *ptr = 0xFFFFFF;
+
+    ptr = (uint32_t *)SYSTICK_BASE + STK_CTRL;
+    *ptr = 0x5; //Enable timer, no interupt, clkSource=ProcessorClk (AHB)
 
     while(1) {
-        printf("Please enter a number: ");
-        scanf("%d",&n);
-        printf("The number entered is %d\r\n",n);
+        //Take STK_VAL[23] and shift it to the LED (bit 3), port K
 
-        printf("Please type a character string: ");
-        gets(str);
-        printf("The character string entered is: ");
-        puts(str);
+          pinState_t states;
+          uint32_t *timerValAddr = (uint32_t *)(SYSTICK_BASE+STK_VAL);
 
-        printf("\r\n");
+           
+          states = (*timerValAddr >> 23) ? SET : CLEAR;
+          driveLed(BLUE,states);
 
+          states = (*timerValAddr >> 22) ? SET : CLEAR;
+          driveLed(RED,states);
+
+          states = (*timerValAddr >> 21) ? SET : CLEAR;
+          driveLed(ORANGE,states);
+
+          states = (*timerValAddr >> 20) ? SET : CLEAR;
+          driveLed(GREEN,states);
     }
 }
 
-struct __FILE {int handle;};
-
-FILE __stdin  = {0};
-FILE __stdout = {1};
-FILE __stderr = {2};
-
-int fgetc(FILE *f) {
-    int c;
-
-6    c = usart3_read();
-
-    if(c == '\r') {
-        usart3_write(c);
-        c = '\n';
-    }
-    usart3_write(c);
-    return c;
-}
-
-int fputc(int c, FILE *f){
-    return usart3_write(c);
-}

@@ -184,7 +184,7 @@ typedef enum {SET,CLEAR} pinState_t;
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
-uint8_t    usart3_write(uint32_t c);
+uint8_t    usart2_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
 	
@@ -235,7 +235,6 @@ void initLeds() {
     *ptr |= 0x00000040; 
 }
 
-
 void driveLed(colours_t colour, pinState_t state) {
     uint32_t *ptr;
 
@@ -274,6 +273,7 @@ void driveLed(colours_t colour, pinState_t state) {
         break;
     }
 }
+
 void usart3_init(){
 
     uint32_t *ptr;
