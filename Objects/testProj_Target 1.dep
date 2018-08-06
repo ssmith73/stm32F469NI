@@ -1,12 +1,0 @@
-Dependencies for Project 'testProj', Target 'Target 1': (DO NOT MODIFY !)
-F (.\main.c)(0x5B6621AA)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections-IC:\Keil\testProj1\RTE\_Target_1-ID:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-ID:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include-D__UVISION_VERSION="522" -D_RTE_ -DSTM32F469xx-o .\objects\main.o --omf_browse .\objects\main.crf --depend .\objects\main.d)
-I (D:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F66928)
-F (RTE\Device\STM32F469NIHx\startup_stm32f469xx.s)(0x5B5F17E2)(--cpu Cortex-M4.fp -g --apcs=interwork -IC:\Keil\testProj1\RTE\_Target_1-ID:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-ID:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include--pd "__UVISION_VERSION SETA 522" --pd "_RTE_ SETA 1" --pd "STM32F469xx SETA 1"--list .\listings\startup_stm32f469xx.lst --xref -o .\objects\startup_stm32f469xx.o --depend .\objects\startup_stm32f469xx.d)
-F (RTE\Device\STM32F469NIHx\system_stm32f4xx.c)(0x5B5F1810)(--c99 -c --cpu Cortex-M4.fp -g -O0 --apcs=interwork --split_sections-IC:\Keil\testProj1\RTE\_Target_1-ID:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include-ID:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include-D__UVISION_VERSION="522" -D_RTE_ -DSTM32F469xx-o .\objects\system_stm32f4xx.o --omf_browse .\objects\system_stm32f4xx.crf --depend .\objects\system_stm32f4xx.d)
-I (D:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h)(0x5B5F17D2)
-I (D:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f469xx.h)(0x5B5F17CE)
-I (D:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include\core_cm4.h)(0x5B608766)
-I (D:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x57F66928)
-I (D:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include\cmsis_compiler.h)(0x5B608764)
-I (D:\Keil_v5\ARM\PACK\ARM\CMSIS\5.0.0\CMSIS\Include\cmsis_armcc.h)(0x5B608764)
-I (D:\Keil_v5\ARM\PACK\Keil\STM32F4xx_DFP\2.13.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\system_stm32f4xx.h)(0x5B5F17D4)
