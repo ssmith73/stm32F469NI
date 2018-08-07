@@ -176,33 +176,74 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
  */
 
-#include<stdint.h>
+
 #include "functions.h"
 
 #define DELAY_IN_MS 250
 	
 
-int main(void) {
+ int main(void) {
 
-    /*
-        This program configures the SysTick to be a 24-bit free running
-        down-counter. Bit 23 of SysTick current value is written to the
-        Blue (PK3) LED continuously.
+     /*
+      * Configure timer 2 to produce a 1Hz delay
+      * TIM2 is 32bit (as is TIM5)
+      *
+      * SYSCLK is 16MHz, we want 1Hz
+      *
+      * delay = N * M /SYSCLK
+      * N=TIMx_CNT value
+      * M=TIM_PSC value (prescaler)
+      *
+      * Let timer count down, initialised with N, 
+      * let the AHB and APB prescaler be set to 1, 
+      * so the clock driving the tim2 prescaler is 
+      * 16MHz - so each clock lasts 1/16MH = 62.5nS
+      * Let the prescaler for the timer be 128,
+      * then N=delay*SYSCLK/M
+      *   1*16e6/128=125000 = 0xE848
+      *
+      * timer 2 is enable by RCC_APB1ENR[0]
+      */
+     initLeds();
 
-        SysTick is based on system clock running at 16MHz.
-        So, bit 23 of SysTick current value toggles about 1Hz
-        16e6Hz/2^23 = 1.907Hz (period)
-     */
-    usart3_init();
-    initLeds();
-    
+     uint32_t *ptr;
 
-    while(1) {
+     //Configure Timer-2 to wrap at 1Hz
+     //Write prescaler PSC with 128 = 0x80
 
-          driveLed(BLUE,CLEAR);
-          dlyMs(DELAY_IN_MS);
-          driveLed(BLUE,SET);
-          dlyMs(DELAY_IN_MS);
-    }
-}
+     ptr = (uint32_t *)(RCC_BASE + RCC_APB1ENR_OFS);
+     *ptr |= 0x00000001; //Enable APB1 clock
+
+     ptr = (uint32_t *)(TIM2_BASE + TIMX_PSC);
+     *ptr = 0x80 - 1;  //Configure prescaler divide by 128
+
+     ptr = (uint32_t *)(TIM2_BASE + TIMX_ARR);
+     *ptr = 0xE848 - 1;  //Configure Auto Reload Register
+
+     ptr = (uint32_t *)(TIM2_BASE + TIMX_CNT);
+     *ptr = 0x0;  //Clear count register
+
+     ptr = (uint32_t *)(TIM2_BASE + TIMX_CR1);
+     *ptr = 0x1;  //Enable TIM2
+
+
+     while(1) {
+         /* 
+            Check the UIF flag in the TIM2 status register
+            TIM2[0], set by HW when the registers are updated
+            - At overflow or underflow regarding repetition counter
+            - When CNT is reinitialized by SW
+            - When CNT is reinitialized by a trigger event
+          * */
+         driveLed(BLUE,CLEAR);
+         ptr = (uint32_t *)(TIM2_BASE + TIMX_SR);
+         while(!(*ptr & 0x1)) {} //wait 1ms
+            *ptr &= ~1;          //clear UIF
+
+         driveLed(BLUE,SET);
+         while(!(*ptr & 0x1)) {} //wait 1ms
+            *ptr &= ~1;          //clear UIF
+     }
+ }
+
 

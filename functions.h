@@ -175,16 +175,54 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
    Observe in a terminal
 
  */
+#include<stdint.h>
+ 
 
 typedef enum {RED,GREEN,ORANGE,BLUE} colours_t;
 typedef enum {SET,CLEAR} pinState_t;
 
-#define RCC_AHB1ENR_ADDR    (uint32_t *)0x40023830
-#define SYSTICK_BASE    (uint32_t )0xE000E010
-#define STK_CTRL        (uint32_t )0x00
-#define STK_LOAD        (uint32_t )0x04
-#define STK_VAL         (uint32_t )0x08
-#define STK_CALIB       (uint32_t )0x0C
+#define RCC_BASE            (uint32_t )0x40023800
+#define RCC_AHB1ENR_ADDR    (uint32_t )0x40023830
+
+#define RCC_APB1ENR_OFS     (uint32_t)0x40
+
+//SysTick timer
+#define SYSTICK_BASE    (uint32_t)0xE000E010
+#define STK_CTRL        (uint32_t)0x00
+#define STK_LOAD        (uint32_t)0x04
+#define STK_VAL         (uint32_t)0x08
+#define STK_CALIB       (uint32_t)0x0C
+
+//Main Timers base addresses
+#define TIM1_BASE       (uint32_t)0x40010000 //APB2
+#define TIM2_BASE       (uint32_t)0x40000000 //APB1
+#define TIM3_BASE       (uint32_t)0x40000400 //APB1
+#define TIM4_BASE       (uint32_t)0x40000800 //APB1
+#define TIM5_BASE       (uint32_t)0x40000C00 //APB1
+#define TIM6_BASE       (uint32_t)0x40001000 //APB1
+#define TIM7_BASE       (uint32_t)0x40001400 //APB1
+#define TIM8_BASE       (uint32_t)0x40010400 //APB2
+#define TIM9_BASE       (uint32_t)0x40014000 //APB2
+#define TIM10_BASE      (uint32_t)0x40014400 //APB2
+#define TIMX11_BASE     (uint32_t)0x40014800 //APB2
+#define TIMX12_BASE     (uint32_t)0x40001800 //APB1
+#define TIMX13_BASE     (uint32_t)0x40001C00 //APB1
+#define TIMX14_BASE     (uint32_t)0x40002000 //APB1
+
+//Timer register offsets
+#define TIMX_CR1        (uint32_t)0x00
+#define TIMX_CR2        (uint32_t)0x04
+#define TIMX_SR         (uint32_t)0x10
+#define TIMX_CCMR1      (uint32_t)0x18
+#define TIMX_CCMR2      (uint32_t)0x1C
+#define TIMX_CCER       (uint32_t)0x20
+#define TIMX_CNT        (uint32_t)0x24
+#define TIMX_PSC        (uint32_t)0x28
+#define TIMX_ARR        (uint32_t)0x2C
+#define TIMX_CCR1       (uint32_t)0x34
+#define TIMX_CCR2       (uint32_t)0x38
+#define TIMX_CCR3       (uint32_t)0x3C
+#define TIMX_CCR4       (uint32_t)0x40
 
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
@@ -225,7 +263,7 @@ void initLeds() {
 
     uint32_t *ptr;
    //setup the AHB1 clock
-    ptr  = RCC_AHB1ENR_ADDR;
+    ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
     *ptr |= 0x00000448; //enable gpioD,G, K clk
 
    //Enable PD4 & 5 as outputs 
@@ -285,7 +323,7 @@ void usart3_init(){
     uint32_t *ptr;
     //Enable AHB1 clock for GPIO (port B)
     //Set RCC_AHB1ENR[1]
-    ptr  = RCC_AHB1ENR_ADDR;
+    ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
     *ptr |= 0x00000002; 
 
     //Enable GPIOB clock - APB1
@@ -330,7 +368,6 @@ void usart3_init(){
     *ptr |= 0x00002000;
 
 }
-
 
 void dlyMs(uint16_t numMs) {
 
