@@ -178,7 +178,7 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
 
 #include "functions.h"
-
+#include "stm32f4xx.h" 
 #define DELAY_IN_MS 250
 	
 
@@ -216,7 +216,7 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
      *ptr |= 0x00000001; //enable gpioA clk
 
      ptr  = (uint32_t *)(GPIO_BASE + GPIOA_OFS + MODER_OFS);
-     *ptr &= 0x00000003; //enable gpioA[0] as input source
+     *ptr &= 0xFFFFFFFC; //enable gpioA[0] as input source
      
 
      ptr = (uint32_t *)(RCC_BASE + RCC_APB2ENR_OFS);
@@ -242,6 +242,8 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
      ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER0);
      *ptr |= 0x00000040; //Enable IRQ[0]
 
+                 // Device header
+     //NVIC_EnableIRQ(EXTI0_IRQn);
      __enable_irq();
 
 
@@ -250,21 +252,50 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  }
 
 void EXTI0_IRQHandler(void) {
-    driveLed(RED,SET);
+    driveLed(GREEN,CLEAR);
+    delayMs(400);
+    driveLed(GREEN,SETBIT);
+    delayMs(400);
+    driveLed(GREEN,CLEAR);
+    delayMs(400);
+    driveLed(GREEN,SETBIT);
+    delayMs(400);
+
+    driveLed(ORANGE,CLEAR);
+    delayMs(300);
+    driveLed(ORANGE,SETBIT);
+    delayMs(300);
+    driveLed(ORANGE,CLEAR);
+    delayMs(300);
+    driveLed(ORANGE,SETBIT);
+    delayMs(300);
+
+    driveLed(RED,CLEAR);
+    delayMs(200);
+    driveLed(RED,SETBIT);
     delayMs(200);
     driveLed(RED,CLEAR);
     delayMs(200);
-    driveLed(RED,SET);
+    driveLed(RED,SETBIT);
     delayMs(200);
-    driveLed(RED,CLEAR);
-    delayMs(200);
+
+    driveLed(BLUE,CLEAR);
+    delayMs(100);
+    driveLed(BLUE,SETBIT);
+    delayMs(100);
+    driveLed(BLUE,CLEAR);
+    delayMs(100);
+    driveLed(BLUE,SETBIT);
+    delayMs(100);
 
     //Clear interrupt pending, or this keeps running!
     //EXTI0 is IRQ6
     
      uint32_t *ptr;
-     ptr  = (uint32_t *)(NVIC_BASE + NVIC_IPR6);
-     *ptr |= 0x00000040; //Enable IRQ[0]
+     ptr  = (uint32_t *)(EXTI_BASE + EXTI_PR);
+     *ptr |= 0x00000001; //Enable IRQ[0]
+
+     //NVIC_ClearPendingIRQ(EXTI0_IRQn);
 
 }
 

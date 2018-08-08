@@ -179,9 +179,9 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  
 
 typedef enum {RED,GREEN,ORANGE,BLUE} colours_t;
-typedef enum {SET,CLEAR} pinState_t;
+typedef enum {SETBIT,CLEAR} pinState_t;
 
-#define RCC_BASE            (uint32_t)0x40023800
+//#define RCC_BASE            (uint32_t)0x40023800
 #define RCC_AHB1ENR_ADDR    (uint32_t)0x40023830
 
 #define RCC_APB1ENR_OFS     (uint32_t)0x40
@@ -212,13 +212,13 @@ typedef enum {SET,CLEAR} pinState_t;
 #define AFRH_OFS            (uint32_t)0x24
 
 
-#define EXTI_BASE           (uint32_t)0x40013C00 //apb2
+//#define EXTI_BASE           (uint32_t)0x40013C00 //apb2
 #define EXTI_IMR            (uint32_t)0x00
 #define EXTI_EMR            (uint32_t)0x04
 #define EXTI_RTSR           (uint32_t)0x08
-#define EXTI_FTSR           (uint32_t)0x10
-#define EXTI_SWIER          (uint32_t)0x14
-#define EXTI_PR             (uint32_t)0x18
+#define EXTI_FTSR           (uint32_t)0x0C
+#define EXTI_SWIER          (uint32_t)0x10
+#define EXTI_PR             (uint32_t)0x14
 
 #define INT_EXTI0           (uint32_t)0x00000058
 #define INT_EXTI1           (uint32_t)0x0000005C
@@ -237,7 +237,7 @@ typedef enum {SET,CLEAR} pinState_t;
 
 //NVIC
 
-#define NVIC_BASE       (uint32_t)0xE000E100
+//#define NVIC_BASE       (uint32_t)0xE000E100
 #define NVIC_ISER0      (uint32_t)0x000
 #define NVIC_ISER1      (uint32_t)0x004
 #define NVIC_ISER2      (uint32_t)0x008
@@ -299,20 +299,20 @@ typedef enum {SET,CLEAR} pinState_t;
 #define STK_CALIB       (uint32_t)0x0C
 
 //Main Timers base addresses
-#define TIM1_BASE       (uint32_t)0x40010000 //APB2
-#define TIM2_BASE       (uint32_t)0x40000000 //APB1
-#define TIM3_BASE       (uint32_t)0x40000400 //APB1
-#define TIM4_BASE       (uint32_t)0x40000800 //APB1
-#define TIM5_BASE       (uint32_t)0x40000C00 //APB1
-#define TIM6_BASE       (uint32_t)0x40001000 //APB1
-#define TIM7_BASE       (uint32_t)0x40001400 //APB1
-#define TIM8_BASE       (uint32_t)0x40010400 //APB2
-#define TIM9_BASE       (uint32_t)0x40014000 //APB2
-#define TIM10_BASE      (uint32_t)0x40014400 //APB2
-#define TIMX11_BASE     (uint32_t)0x40014800 //APB2
-#define TIMX12_BASE     (uint32_t)0x40001800 //APB1
-#define TIMX13_BASE     (uint32_t)0x40001C00 //APB1
-#define TIMX14_BASE     (uint32_t)0x40002000 //APB1
+/*#define TIM1_BASE       (uint32_t)0x40010000 //APB2*/
+/*#define TIM2_BASE       (uint32_t)0x40000000 //APB1*/
+/*#define TIM3_BASE       (uint32_t)0x40000400 //APB1*/
+/*#define TIM4_BASE       (uint32_t)0x40000800 //APB1*/
+/*#define TIM5_BASE       (uint32_t)0x40000C00 //APB1*/
+/*#define TIM6_BASE       (uint32_t)0x40001000 //APB1*/
+/*#define TIM7_BASE       (uint32_t)0x40001400 //APB1*/
+/*#define TIM8_BASE       (uint32_t)0x40010400 //APB2*/
+/*#define TIM9_BASE       (uint32_t)0x40014000 //APB2*/
+/*#define TIM10_BASE      (uint32_t)0x40014400 //APB2*/
+/*#define TIMX11_BASE     (uint32_t)0x40014800 //APB2*/
+/*#define TIMX12_BASE     (uint32_t)0x40001800 //APB1*/
+/*#define TIMX13_BASE     (uint32_t)0x40001C00 //APB1*/
+/*#define TIMX14_BASE     (uint32_t)0x40002000 //APB1*/
 
 //Timer register offsets
 #define TIMX_CR1        (uint32_t)0x00
@@ -398,25 +398,25 @@ void driveLed(colours_t colour, pinState_t state) {
     switch(colour){
         case RED:
         ptr =  (uint32_t *)0x40020C18; //addr of GPIOD RED (PD5) BSRR reg
-        *ptr = (state == SET) ? 
+        *ptr = (state == SETBIT) ? 
             0x00200000 :  //Set RED LED
             0x00000020;   //Clear RED LED 
         break;
         case GREEN:
         ptr = (uint32_t *)0x40021818;//addr of GPIOG GREEN (PG6) BSRR reg
-        *ptr = (state == SET) ? 
+        *ptr = (state == SETBIT) ? 
             0x00400000 : //Set Green LED
             0x00000040;  //Clear Green LED 
         break;
         case ORANGE:
         ptr = (uint32_t *)0x40020C18;//addr of GPIOD ORANGE (PD4) BSRR reg
-        *ptr = (state == SET) ? 
+        *ptr = (state == SETBIT) ? 
             0x00100000 : //Set Green LED
             0x00000010;  //Clear Green LED 
         break;
         case BLUE:
         ptr = (uint32_t *)0x40022818;//addr of GPIOK Blue (PK3) BSRR reg
-        *ptr = (state == SET) ? 
+        *ptr = (state == SETBIT) ? 
             0x00080000 : //Set Blue LED
             0x00000008;  //Clear Blue LED 
         break;
