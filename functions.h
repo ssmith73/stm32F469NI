@@ -181,10 +181,115 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 typedef enum {RED,GREEN,ORANGE,BLUE} colours_t;
 typedef enum {SET,CLEAR} pinState_t;
 
-#define RCC_BASE            (uint32_t )0x40023800
-#define RCC_AHB1ENR_ADDR    (uint32_t )0x40023830
+#define RCC_BASE            (uint32_t)0x40023800
+#define RCC_AHB1ENR_ADDR    (uint32_t)0x40023830
 
 #define RCC_APB1ENR_OFS     (uint32_t)0x40
+#define RCC_APB2ENR_OFS     (uint32_t)0x44
+
+#define GPIO_BASE           (uint32_t)0x40020000 //ahb1
+#define GPIOA_OFS           (uint32_t)0x0000
+#define GPIOB_OFS           (uint32_t)0x0400
+#define GPIOC_OFS           (uint32_t)0x0800
+#define GPIOD_OFS           (uint32_t)0x0C00
+#define GPIOE_OFS           (uint32_t)0x1000
+#define GPIOF_OFS           (uint32_t)0x1400
+#define GPIOG_OFS           (uint32_t)0x1800
+#define GPIOH_OFS           (uint32_t)0x1C00
+#define GPIOI_OFS           (uint32_t)0x2000
+#define GPIOJ_OFS           (uint32_t)0x2400
+#define GPIOK_OFS           (uint32_t)0x2800
+
+#define MODER_OFS           (uint32_t)0x00
+#define OTYPER_OFS          (uint32_t)0x04
+#define OSPEEDR_OFS         (uint32_t)0x08
+#define PUPDR_OFS           (uint32_t)0x0C
+#define IDR_OFS             (uint32_t)0x10
+#define ODR_OFS             (uint32_t)0x14
+#define BSRR_OFS            (uint32_t)0x18
+#define LCKR_OFS            (uint32_t)0x1C
+#define AFRL_OFS            (uint32_t)0x20
+#define AFRH_OFS            (uint32_t)0x24
+
+
+#define EXTI_BASE           (uint32_t)0x40013C00 //apb2
+#define EXTI_IMR            (uint32_t)0x00
+#define EXTI_EMR            (uint32_t)0x04
+#define EXTI_RTSR           (uint32_t)0x08
+#define EXTI_FTSR           (uint32_t)0x10
+#define EXTI_SWIER          (uint32_t)0x14
+#define EXTI_PR             (uint32_t)0x18
+
+#define INT_EXTI0           (uint32_t)0x00000058
+#define INT_EXTI1           (uint32_t)0x0000005C
+#define INT_EXTI2           (uint32_t)0x00000060
+#define INT_EXTI3           (uint32_t)0x00000064
+#define INT_EXTI4           (uint32_t)0x00000068
+#define INT_EXTI9_5         (uint32_t)0x0000009C
+#define INT_EXTI15_10       (uint32_t)0x000000E0
+
+#define SYSCFG_EXTICR1      (uint32_t)0x00000008
+#define SYSCFG_EXTICR2      (uint32_t)0x0000000C
+#define SYSCFG_EXTICR3      (uint32_t)0x00000010
+#define SYSCFG_EXTICR4      (uint32_t)0x00000014
+#define SYSCFG_MEMRMP       (uint32_t)0x00000020
+
+
+//NVIC
+
+#define NVIC_BASE       (uint32_t)0xE000E100
+#define NVIC_ISER0      (uint32_t)0x000
+#define NVIC_ISER1      (uint32_t)0x004
+#define NVIC_ISER2      (uint32_t)0x008
+#define NVIC_ICER0      (uint32_t)0x080
+#define NVIC_ICER1      (uint32_t)0x084
+#define NVIC_ICER2      (uint32_t)0x088
+#define NVIC_ISPR0      (uint32_t)0x100
+#define NVIC_ISPR1      (uint32_t)0x104
+#define NVIC_ISPR2      (uint32_t)0x108
+#define NVIC_ICPR0      (uint32_t)0x180
+#define NVIC_ICPR1      (uint32_t)0x184
+#define NVIC_ICPR2      (uint32_t)0x188
+#define NVIC_IABR0      (uint32_t)0x200
+#define NVIC_IABR1      (uint32_t)0x204
+#define NVIC_IABR2      (uint32_t)0x208
+
+#define NVIC_IPR0       (uint32_t)0x300
+#define NVIC_IPR1       (uint32_t)0x304
+#define NVIC_IPR2       (uint32_t)0x308
+#define NVIC_IPR3       (uint32_t)0x30C
+#define NVIC_IPR4       (uint32_t)0x310
+#define NVIC_IPR5       (uint32_t)0x314
+#define NVIC_IPR6       (uint32_t)0x318
+#define NVIC_IPR7       (uint32_t)0x31C
+#define NVIC_IPR8       (uint32_t)0x320
+#define NVIC_IPR9       (uint32_t)0x324
+#define NVIC_IPR10      (uint32_t)0x328
+#define NVIC_IPR11      (uint32_t)0x32C
+#define NVIC_IPR12      (uint32_t)0x330
+#define NVIC_IPR13      (uint32_t)0x334
+#define NVIC_IPR14      (uint32_t)0x338
+#define NVIC_IPR15      (uint32_t)0x33C
+#define NVIC_IPR16      (uint32_t)0x340
+#define NVIC_IPR17      (uint32_t)0x344
+#define NVIC_IPR18      (uint32_t)0x348
+#define NVIC_IPR19      (uint32_t)0x34C
+#define NVIC_IPR20      (uint32_t)0x350
+#define NVIC_IPR21      (uint32_t)0x354
+#define NVIC_IPR22      (uint32_t)0x358
+#define NVIC_IPR23      (uint32_t)0x35C
+#define NVIC_IPR24      (uint32_t)0x360
+#define NVIC_IPR25      (uint32_t)0x364
+
+
+
+#define NVIC_ISPR       (uint32_t)0x200
+#define NVIC_ICPR       (uint32_t)0x300
+#define NVIC_IPR        (uint32_t)0x400
+#define NVIC_STIR       (uint32_t)0xF00
+
+
+
 
 //SysTick timer
 #define SYSTICK_BASE    (uint32_t)0xE000E010

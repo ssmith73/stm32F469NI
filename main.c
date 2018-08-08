@@ -185,65 +185,87 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  int main(void) {
 
      /*
-      * Configure timer 2 to produce a 1Hz delay
-      * TIM2 is 32bit (as is TIM5)
+      * Using the User button (blue) on the discovery board
+      * This button has a pull-down resistor, so pressing it
+      * causes a logic-1 to be read - connected to PA0, shared
+      * with the gpio, and wakeup function
       *
-      * SYSCLK is 16MHz, we want 1Hz
+      * We need to detect the rising edge, this will trigger an
+      * interrupt on EXTI (the external interrupt controller)
+      * There are 16 external interupts assigned to the GPIO pins
+      * Each pin from each port can be attached with an EXTIx, 
+      * for each of the 16-EXTI's, 4 bits are assigned to connect
+      * one of the GPIO ports to the specific EXTI
       *
-      * delay = N * M /SYSCLK
-      * N=TIMx_CNT value
-      * M=TIM_PSC value (prescaler)
+      * for example: To connect PC13, EXTI13 must be configured for
+      * portC - EXTI13 controls this mux function - one of several 
+      * pins can be connected to each EXTI
+      *  SYSCFG_EXTICRx is used for this.
       *
-      * Let timer count down, initialised with N, 
-      * let the AHB and APB prescaler be set to 1, 
-      * so the clock driving the tim2 prescaler is 
-      * 16MHz - so each clock lasts 1/16MH = 62.5nS
-      * Let the prescaler for the timer be 128,
-      * then N=delay*SYSCLK/M
-      *   1*16e6/128=125000 = 0xE848
+      * Here simply toggle the LED's when the button is pressed.
       *
-      * timer 2 is enable by RCC_APB1ENR[0]
+      *
       */
-     initLeds();
+
+     __disable_irq();
 
      uint32_t *ptr;
+     initLeds(); //This enables the clk for ports, d,g and K
 
-     //Configure Timer-2 to wrap at 1Hz
-     //Write prescaler PSC with 128 = 0x80
+     ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
+     *ptr |= 0x00000001; //enable gpioA clk
 
-     ptr = (uint32_t *)(RCC_BASE + RCC_APB1ENR_OFS);
-     *ptr |= 0x00000001; //Enable APB1 clock
+     ptr  = (uint32_t *)(GPIO_BASE + GPIOA_OFS + MODER_OFS);
+     *ptr &= 0x00000003; //enable gpioA[0] as input source
+     
 
-     ptr = (uint32_t *)(TIM2_BASE + TIMX_PSC);
-     *ptr = 0x80 - 1;  //Configure prescaler divide by 128
+     ptr = (uint32_t *)(RCC_BASE + RCC_APB2ENR_OFS);
+     *ptr |= 0x00004000; //Enable SYSCFG clock [14], (for EXTIx)
 
-     ptr = (uint32_t *)(TIM2_BASE + TIMX_ARR);
-     *ptr = 0xE848 - 1;  //Configure Auto Reload Register
+     ptr  = (uint32_t *)SYSCFG_EXTICR1;
+     *ptr &= 0x0000000F; //clear EXTI0 bits
+     *ptr |= 0x00000000; //Configure PA0 as Line0 EXTI
 
-     ptr = (uint32_t *)(TIM2_BASE + TIMX_CNT);
-     *ptr = 0x0;  //Clear count register
+     //Enable the mask bit of the interrupt line in EXTI_IMR
+     ptr  = (uint32_t *)(EXTI_BASE + EXTI_IMR);
+     *ptr |= 0x00000001; //unmask PA0
 
-     ptr = (uint32_t *)(TIM2_BASE + TIMX_CR1);
-     *ptr = 0x1;  //Enable TIM2
+     //Select the trigger, rising edge detect EXTI_RTSR
+     ptr  = (uint32_t *)(EXTI_BASE + EXTI_RTSR);
+     *ptr |= 0x00000001; //rising edge detect on PA0
+
+     //Enable the EXTI0 interrupt in the NVIC
+     //The number of the interrupt is found in the Vector table
+     //page 289 of the Reference Manual - here Position 6 is for 
+     //EXTI0  - set in ISER0[6] 
+     //Also page 218 of Programmers manual
+     ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER0);
+     *ptr |= 0x00000040; //Enable IRQ[0]
+
+     __enable_irq();
 
 
-     while(1) {
-         /* 
-            Check the UIF flag in the TIM2 status register
-            TIM2[0], set by HW when the registers are updated
-            - At overflow or underflow regarding repetition counter
-            - When CNT is reinitialized by SW
-            - When CNT is reinitialized by a trigger event
-          * */
-         driveLed(BLUE,CLEAR);
-         ptr = (uint32_t *)(TIM2_BASE + TIMX_SR);
-         while(!(*ptr & 0x1)) {} //wait 1ms
-            *ptr &= ~1;          //clear UIF
+     while(1) { }
 
-         driveLed(BLUE,SET);
-         while(!(*ptr & 0x1)) {} //wait 1ms
-            *ptr &= ~1;          //clear UIF
-     }
  }
+
+void EXTI0_IRQHandler(void) {
+    driveLed(RED,SET);
+    delayMs(200);
+    driveLed(RED,CLEAR);
+    delayMs(200);
+    driveLed(RED,SET);
+    delayMs(200);
+    driveLed(RED,CLEAR);
+    delayMs(200);
+
+    //Clear interrupt pending, or this keeps running!
+    //EXTI0 is IRQ6
+    
+     uint32_t *ptr;
+     ptr  = (uint32_t *)(NVIC_BASE + NVIC_IPR6);
+     *ptr |= 0x00000040; //Enable IRQ[0]
+
+}
 
 
