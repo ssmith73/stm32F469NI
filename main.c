@@ -189,21 +189,11 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
       * This button has a pull-down resistor, so pressing it
       * causes a logic-1 to be read - connected to PA0, shared
       * with the gpio, and wakeup function
+      * When this happens toggle the ORANGE led 5 times
       *
-      * We need to detect the rising edge, this will trigger an
-      * interrupt on EXTI (the external interrupt controller)
-      * There are 16 external interupts assigned to the GPIO pins
-      * Each pin from each port can be attached with an EXTIx, 
-      * for each of the 16-EXTI's, 4 bits are assigned to connect
-      * one of the GPIO ports to the specific EXTI
-      *
-      * for example: To connect PC13, EXTI13 must be configured for
-      * portC - EXTI13 controls this mux function - one of several 
-      * pins can be connected to each EXTI
-      *  SYSCFG_EXTICRx is used for this.
-      *
-      * Here simply toggle the LED's when the button is pressed.
-      *
+      * Also going to use a wire, to connect PB14 to ground, so 
+      * here need to detect a falling edge - when this happens 
+      * toggle the blue LED 5 times
       *
       */
 
@@ -213,36 +203,59 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
      initLeds(); //This enables the clk for ports, d,g and K
 
      ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
-     *ptr |= 0x00000001; //enable gpioA clk
+     *ptr |= 0x00000003; //enable gpioA & B clk, not done by initLeds()
 
      ptr  = (uint32_t *)(GPIO_BASE + GPIOA_OFS + MODER_OFS);
      *ptr &= 0xFFFFFFFC; //enable gpioA[0] as input source
-     
+
+     ptr  = (uint32_t *)(GPIO_BASE + GPIOB_OFS + MODER_OFS);
+     *ptr &= 0xCFFFFFFF; //enable gpioB[14] as input source
+
 
      ptr = (uint32_t *)(RCC_BASE + RCC_APB2ENR_OFS);
      *ptr |= 0x00004000; //Enable SYSCFG clock [14], (for EXTIx)
 
-     ptr  = (uint32_t *)SYSCFG_EXTICR1;
+     //Configure external interrupts, on PA0, and PB14
+
+     ptr  = (uint32_t *)(SYSCFG_BASE + SYSCFG_EXTICR1);
      *ptr &= 0x0000000F; //clear EXTI0 bits
-     *ptr |= 0x00000000; //Configure PA0 as Line0 EXTI
+     *ptr |= 0x00000000; //Configure EXTI0 as PA0
 
-     //Enable the mask bit of the interrupt line in EXTI_IMR
+     ptr  = (uint32_t *)(SYSCFG_BASE + SYSCFG_EXTICR4);
+     *ptr &= 0x00000F00; //clear EXTI14 bits
+     *ptr |= 0x00000100; //Configure EXT14 as PB 
+
+     //unmask interrupt 0 and 14
      ptr  = (uint32_t *)(EXTI_BASE + EXTI_IMR);
-     *ptr |= 0x00000001; //unmask PA0
+     *ptr |= 0x00004001; 
 
-     //Select the trigger, rising edge detect EXTI_RTSR
+     //Select the trigger, rising edge detect on input line 0
      ptr  = (uint32_t *)(EXTI_BASE + EXTI_RTSR);
-     *ptr |= 0x00000001; //rising edge detect on PA0
+     *ptr |= 0x00000001;
+
+     //Put a pull up on the GPIO14 - write 0x2 to PUPDR[29:28] 
+     ptr  = (uint32_t *)(GPIO_BASE + GPIOB_OFS + PUPDR_OFS);
+     *ptr |= 0x10000000; 
+
+     //Select the trigger, falling edge detect on input line 14
+     ptr  = (uint32_t *)(EXTI_BASE + EXTI_FTSR);
+     *ptr |= 0x00004000; 
 
      //Enable the EXTI0 interrupt in the NVIC
      //The number of the interrupt is found in the Vector table
      //page 289 of the Reference Manual - here Position 6 is for 
      //EXTI0  - set in ISER0[6] 
+     //IRQ14 is in EXTI15_10 and is #40, this must be found in the
+     //NVIC_ISERx registers
+     //EXTI14 - set in ISER1[8]
      //Also page 218 of Programmers manual
      ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER0);
      *ptr |= 0x00000040; //Enable IRQ[0]
 
-                 // Device header
+     ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER1);
+     *ptr |= 0x00000100; //Enable IRQ[40]
+
+
      //NVIC_EnableIRQ(EXTI0_IRQn);
      __enable_irq();
 
@@ -252,51 +265,44 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
  }
 
 void EXTI0_IRQHandler(void) {
-    driveLed(GREEN,CLEAR);
-    delayMs(400);
-    driveLed(GREEN,SETBIT);
-    delayMs(400);
-    driveLed(GREEN,CLEAR);
-    delayMs(400);
-    driveLed(GREEN,SETBIT);
-    delayMs(400);
-
-    driveLed(ORANGE,CLEAR);
-    delayMs(300);
-    driveLed(ORANGE,SETBIT);
-    delayMs(300);
-    driveLed(ORANGE,CLEAR);
-    delayMs(300);
-    driveLed(ORANGE,SETBIT);
-    delayMs(300);
-
-    driveLed(RED,CLEAR);
-    delayMs(200);
-    driveLed(RED,SETBIT);
-    delayMs(200);
-    driveLed(RED,CLEAR);
-    delayMs(200);
-    driveLed(RED,SETBIT);
-    delayMs(200);
-
-    driveLed(BLUE,CLEAR);
-    delayMs(100);
-    driveLed(BLUE,SETBIT);
-    delayMs(100);
-    driveLed(BLUE,CLEAR);
-    delayMs(100);
-    driveLed(BLUE,SETBIT);
-    delayMs(100);
+    //Obviously don't do delays in an IRQ!!
+    
+    for(uint8_t i=0;i<5;i++) {
+        driveLed(ORANGE,CLEAR);
+        delayMs(100);
+        driveLed(ORANGE,SETBIT);
+        delayMs(100);
+    }
 
     //Clear interrupt pending, or this keeps running!
     //EXTI0 is IRQ6
+    //EXTI_PR - page 298 Reference Manual
     
      uint32_t *ptr;
      ptr  = (uint32_t *)(EXTI_BASE + EXTI_PR);
-     *ptr |= 0x00000001; //Enable IRQ[0]
+     *ptr |= 0x00000001; //clear pending flag for line 0 
 
      //NVIC_ClearPendingIRQ(EXTI0_IRQn);
 
 }
+
+void EXTI15_10_IRQHandler(void) {
+    //Obviously don't do delays in an IRQ!!
+    for(uint8_t i=0;i<5;i++) {
+        driveLed(BLUE,CLEAR);
+        delayMs(100);
+        driveLed(BLUE,SETBIT);
+        delayMs(100);
+    }
+
+    //Clear interrupt pending, or this keeps running!
+    //EXTI15_10 is IRQ40
+    //EXTI_PR - page 298 Reference Manual
+    
+     uint32_t *ptr;
+     ptr  = (uint32_t *)(EXTI_BASE + EXTI_PR);
+     *ptr |= 0x00004000; //clear pending flag for line 14 
+
+    }
 
 

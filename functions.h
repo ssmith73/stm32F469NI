@@ -228,11 +228,12 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 #define INT_EXTI9_5         (uint32_t)0x0000009C
 #define INT_EXTI15_10       (uint32_t)0x000000E0
 
-#define SYSCFG_EXTICR1      (uint32_t)0x00000008
-#define SYSCFG_EXTICR2      (uint32_t)0x0000000C
-#define SYSCFG_EXTICR3      (uint32_t)0x00000010
-#define SYSCFG_EXTICR4      (uint32_t)0x00000014
-#define SYSCFG_MEMRMP       (uint32_t)0x00000020
+//#define SYSCFG_BASE         (uint32_t)0x40013800
+#define SYSCFG_EXTICR1      (uint32_t)0x08
+#define SYSCFG_EXTICR2      (uint32_t)0x0C
+#define SYSCFG_EXTICR3      (uint32_t)0x10
+#define SYSCFG_EXTICR4      (uint32_t)0x14
+#define SYSCFG_MEMRMP       (uint32_t)0x20
 
 
 //NVIC
