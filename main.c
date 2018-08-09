@@ -201,62 +201,26 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
      uint32_t *ptr;
      initLeds(); //This enables the clk for ports, d,g and K
-
-     ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
-     *ptr |= 0x00000003; //enable gpioA & B clk, not done by initLeds()
-
-     ptr  = (uint32_t *)(GPIO_BASE + GPIOA_OFS + MODER_OFS);
-     *ptr &= 0xFFFFFFFC; //enable gpioA[0] as input source
-
-     ptr  = (uint32_t *)(GPIO_BASE + GPIOB_OFS + MODER_OFS);
-     *ptr &= 0xCFFFFFFF; //enable gpioB[14] as input source
+     usart3_init();
 
 
-     ptr = (uint32_t *)(RCC_BASE + RCC_APB2ENR_OFS);
-     *ptr |= 0x00004000; //Enable SYSCFG clock [14], (for EXTIx)
 
-     //Configure external interrupts, on PA0, and PB14
-
-     ptr  = (uint32_t *)(SYSCFG_BASE + SYSCFG_EXTICR1);
-     *ptr &= 0x0000000F; //clear EXTI0 bits
-     *ptr |= 0x00000000; //Configure EXTI0 as PA0
-
-     ptr  = (uint32_t *)(SYSCFG_BASE + SYSCFG_EXTICR4);
-     *ptr &= 0x00000F00; //clear EXTI14 bits
-     *ptr |= 0x00000100; //Configure EXT14 as PB 
-
-     //unmask interrupt 0 and 14
-     ptr  = (uint32_t *)(EXTI_BASE + EXTI_IMR);
-     *ptr |= 0x00004001; 
-
-     //Select the trigger, rising edge detect on input line 0
-     ptr  = (uint32_t *)(EXTI_BASE + EXTI_RTSR);
-     *ptr |= 0x00000001;
-
-     //Put a pull up on the GPIO14 - write 0x2 to PUPDR[29:28] 
-     ptr  = (uint32_t *)(GPIO_BASE + GPIOB_OFS + PUPDR_OFS);
-     *ptr |= 0x10000000; 
-
-     //Select the trigger, falling edge detect on input line 14
-     ptr  = (uint32_t *)(EXTI_BASE + EXTI_FTSR);
-     *ptr |= 0x00004000; 
-
-     //Enable the EXTI0 interrupt in the NVIC
+     //Enable the UART3 interrupt in the NVIC
      //The number of the interrupt is found in the Vector table
-     //page 289 of the Reference Manual - here Position 6 is for 
-     //EXTI0  - set in ISER0[6] 
-     //IRQ14 is in EXTI15_10 and is #40, this must be found in the
-     //NVIC_ISERx registers
-     //EXTI14 - set in ISER1[8]
+     //page 289 of the Reference Manual - here Position 39 is for 
+     //UART3  - set in ISER1[7]
      //Also page 218 of Programmers manual
-     ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER0);
-     *ptr |= 0x00000040; //Enable IRQ[0]
 
-     ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER1);
-     *ptr |= 0x00000100; //Enable IRQ[40]
 
+    //USART3_CR1 - enable RX interrupt
+    ptr   =  (uint32_t *)(USART3_BASE + USART3_CR1_OFS);
+    *ptr |= 0x00000020;
+
+    ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER1);
+    *ptr |= 0x00000080; //Enable IRQ[39]
 
      //NVIC_EnableIRQ(EXTI0_IRQn);
+     //Global interrupt enable
      __enable_irq();
 
 
@@ -264,45 +228,36 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
  }
 
-void EXTI0_IRQHandler(void) {
-    //Obviously don't do delays in an IRQ!!
-    
-    for(uint8_t i=0;i<5;i++) {
-        driveLed(ORANGE,CLEAR);
-        delayMs(100);
-        driveLed(ORANGE,SETBIT);
-        delayMs(100);
-    }
+void LED_Blink(uint8_t value) {
 
-    //Clear interrupt pending, or this keeps running!
-    //EXTI0 is IRQ6
-    //EXTI_PR - page 298 Reference Manual
-    
-     uint32_t *ptr;
-     ptr  = (uint32_t *)(EXTI_BASE + EXTI_PR);
-     *ptr |= 0x00000001; //clear pending flag for line 0 
-
-     //NVIC_ClearPendingIRQ(EXTI0_IRQn);
-
-}
-
-void EXTI15_10_IRQHandler(void) {
-    //Obviously don't do delays in an IRQ!!
-    for(uint8_t i=0;i<5;i++) {
+    for(;value>0;value--) {
         driveLed(BLUE,CLEAR);
         delayMs(100);
         driveLed(BLUE,SETBIT);
         delayMs(100);
     }
+    delayMs(800);
+}
 
-    //Clear interrupt pending, or this keeps running!
-    //EXTI15_10 is IRQ40
-    //EXTI_PR - page 298 Reference Manual
-    
-     uint32_t *ptr;
-     ptr  = (uint32_t *)(EXTI_BASE + EXTI_PR);
-     *ptr |= 0x00004000; //clear pending flag for line 14 
+void USART3_IRQHandler(void) {
+    //Obviously don't do delays in an IRQ!!
+    uint8_t c;
+    uint32_t *ptr;
+    uint32_t *data;
+    //ptr   =  (uint32_t *)(USART3_BASE + USART3_SR_OFS);
 
+    //data =   (uint32_t *)(USART3_BASE + USART3_DR_OFS);
+
+
+    if(* (uint32_t *)(USART3_BASE + USART3_SR_OFS) & 0x00000020) {
+        c = *(uint32_t *)(USART3_BASE + USART3_DR_OFS);
+        LED_Blink(c);
     }
+
+    //interrupt bit clears when read, do no need to clear 
+    //it here like for the timers
+
+}
+
 
 

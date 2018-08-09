@@ -99,6 +99,8 @@ sad
    USART3 addresses
    0x4000.4800, .4BFF
 
+   USART3 Global interrupt is at irq[39] - page 290 REFMAN
+
    The ST LINK uses PB10 RX, and PB11 for TX
     it also uses PC10/11
    UART3_TX PA0 Also alternative function PC10 AF8
@@ -176,16 +178,59 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
  */
 #include<stdint.h>
- 
 
 typedef enum {RED,GREEN,ORANGE,BLUE} colours_t;
 typedef enum {SETBIT,CLEAR} pinState_t;
 
-//#define RCC_BASE            (uint32_t)0x40023800
+#define MY_RCC_BASE         (uint32_t)0x40023800
 #define RCC_AHB1ENR_ADDR    (uint32_t)0x40023830
+
+#define RCC_CR_OFS          (uint32_t)0x00
+#define RCC_PLL_CFG_OFS     (uint32_t)0x04
+#define RCC_CFGR_OFS        (uint32_t)0x08
+#define RCC_CIR_OFS         (uint32_t)0x0C
+
+#define RCC_AHB1RSTR_OFS    (uint32_t)0x10
+#define RCC_AHB2RSTR_OFS    (uint32_t)0x14
+#define RCC_AHB3RSTR_OFS    (uint32_t)0x18
+
+#define RCC_APB1RSTR_OFS    (uint32_t)0x20
+#define RCC_APB2RSTR_OFS    (uint32_t)0x24
+
+#define RCC_AHB1ENR_OFS     (uint32_t)0x30
+#define RCC_AHB2ENR_OFS     (uint32_t)0x34
+#define RCC_AHB3ENR_OFS     (uint32_t)0x38
 
 #define RCC_APB1ENR_OFS     (uint32_t)0x40
 #define RCC_APB2ENR_OFS     (uint32_t)0x44
+
+#define RCC_AHB1LPENR_OFS   (uint32_t)0x50
+#define RCC_AHB2LPENR_OFS   (uint32_t)0x54
+#define RCC_AHB3LPENR_OFS   (uint32_t)0x58
+
+#define RCC_APB1LPENR_OFS   (uint32_t)0x60
+#define RCC_APB2LPENR_OFS   (uint32_t)0x64
+
+#define RCC_BDCR_OFS        (uint32_t)0x70
+#define RCC_CSR_OFS         (uint32_t)0x74
+
+#define RCC_SSCGR_OFS       (uint32_t)0x80
+#define RCC_PLLI2SCFGR_OFS  (uint32_t)0x84
+#define RCC_PLLSAICFGR_OFS  (uint32_t)0x88
+#define RCC_DCKCFGR_OFS     (uint32_t)0x8C
+
+
+#define MY_USART3_BASE         (uint32_t)0x40004800
+#define USART3_SR_OFS       (uint32_t)0x00
+#define USART3_DR_OFS       (uint32_t)0x04
+#define USART3_BRR_OFS      (uint32_t)0x08
+#define USART3_CR1_OFS      (uint32_t)0x0C
+#define USART3_CR2_OFS      (uint32_t)0x10
+#define USART3_CR3_OFS      (uint32_t)0x14
+#define USART3_GTPR_OFS     (uint32_t)0x18
+
+
+
 
 #define GPIO_BASE           (uint32_t)0x40020000 //ahb1
 #define GPIOA_OFS           (uint32_t)0x0000
@@ -200,16 +245,16 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 #define GPIOJ_OFS           (uint32_t)0x2400
 #define GPIOK_OFS           (uint32_t)0x2800
 
-#define MODER_OFS           (uint32_t)0x00
-#define OTYPER_OFS          (uint32_t)0x04
-#define OSPEEDR_OFS         (uint32_t)0x08
-#define PUPDR_OFS           (uint32_t)0x0C
-#define IDR_OFS             (uint32_t)0x10
-#define ODR_OFS             (uint32_t)0x14
-#define BSRR_OFS            (uint32_t)0x18
-#define LCKR_OFS            (uint32_t)0x1C
-#define AFRL_OFS            (uint32_t)0x20
-#define AFRH_OFS            (uint32_t)0x24
+#define GPIO_MODER_OFS      (uint32_t)0x00
+#define GPIO_OTYPER_OFS     (uint32_t)0x04
+#define GPIO_OSPEEDR_OFS    (uint32_t)0x08
+#define GPIO_PUPDR_OFS      (uint32_t)0x0C
+#define GPIO_IDR_OFS        (uint32_t)0x10
+#define GPIO_ODR_OFS        (uint32_t)0x14
+#define GPIO_BSRR_OFS       (uint32_t)0x18
+#define GPIO_LCKR_OFS       (uint32_t)0x1C
+#define GPIO_AFRL_OFS       (uint32_t)0x20
+#define GPIO_AFRH_OFS       (uint32_t)0x24
 
 
 //#define EXTI_BASE           (uint32_t)0x40013C00 //apb2
@@ -333,7 +378,7 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
-uint8_t usart2_write(uint32_t c);
+uint8_t usart3_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
 void    dlyMs(uint16_t numMs); //This uses the SysTick
@@ -426,51 +471,67 @@ void driveLed(colours_t colour, pinState_t state) {
 
 void usart3_init(){
 
+    //USART register map REFMAN page 1087
+    //Alternative Function of GPIO's
+    //USART3 is connected to ST LINK
+    //The ST LINK uses PB10 RX, and PB11 for TX
+    //it also uses PC10/11
+   
+    //PB10/11 need to be configured in the GPIO mode reg to use AF7 
+    
     uint32_t *ptr;
     //Enable AHB1 clock for GPIO (port B)
     //Set RCC_AHB1ENR[1]
-    ptr  = (uint32_t *)RCC_AHB1ENR_ADDR;
+    ptr  = (uint32_t *)(MY_RCC_BASE + RCC_AHB1ENR_OFS);
     *ptr |= 0x00000002; 
 
     //Enable GPIOB clock - APB1
     //Addresses of RCC 0x4002_3800→3BFF 
     //set RCC_APB1ENR[18]
-    ptr = (uint32_t *) 0x40023840;
+    ptr = (uint32_t *) (MY_RCC_BASE + RCC_APB1ENR_OFS);
     *ptr |= 0x00040000;
 
-    //Configure B11 for USART3 Tx GPIOx_AFH[11]
-    //Configure B10 for USART3 Rx GPIOx_AFH[10]
+    //Configure B10 for USART3 Tx GPIOx_AFH[10]
+    //Configure B11 for USART3 Rx GPIOx_AFH[11]
     //0x4002.0400 - 0x4002 07FF GPIOB
     //GPIOB 4002.0400, offset for AFH 0x24
-    ptr =  (uint32_t *)0x40020424;
+    
+   /*PB10/11 need to be configured in the GPIO mode reg to use AF7 */
+   /*See page 75 of datasheet (not reference manual)*/
+   /*After the mode of the GPIO's is set to AF (0x2), the GPIO_AFRH/L*/
+   /*must be set to alternative function '0x7'*/
+
+    ptr =  (uint32_t *) (GPIO_BASE + GPIOB_OFS + GPIO_AFRH_OFS);
     *ptr |= 0x00007700;
 
-    //Mode bits for P10 to AF, offset for GPIOx_MODER 0x00
+    //Set GPIO mode bits for alternative function
+    //GPIO 11 -> MODER[23:22], 
+    //GPIO 10 -> MODER[21:20] - AF is 0x2
     //Mode bits for P11 to AF, offset for GPIOx_MODER 0x00
-    ptr = (uint32_t *) 0x40020400;
+    ptr = (uint32_t *) (GPIO_BASE + GPIOB_OFS + GPIO_MODER_OFS);
     *ptr |= 0x00A00000;
 
     //Set baud rate = 11500 to match ST LINK
     //USART3 base addr = 0x4000.4800, offset for USART_BRR 0x8
     //baud rate: 115200, OSR 16, 8bits, no parity,no flow control
-    ptr =  (uint32_t *)0x40004808;
+    ptr =  (uint32_t *)(MY_USART3_BASE + USART3_BRR_OFS);
     *ptr |= 0x0000008B;
 
     //USART3_CR1 - set transmit enable, TE(bit 3), offset 0x0c
-    //USART3_CR1 - set receive  enable, TE(bit 2), offset 0x0c
-    ptr   =  (uint32_t *)0x4000480C;
+    //USART3_CR1 - set receive  enable, RE(bit 2), offset 0x0c
+    ptr   =  (uint32_t *)(MY_USART3_BASE + USART3_CR1_OFS);
     *ptr |= 0x0000000C;
 
     //USART3_CR2 - 1 stop bit[13:12], offset 0x10
-    ptr   =  (uint32_t *)0x40004810;
+    ptr   =  (uint32_t *)(MY_USART3_BASE + USART3_CR2_OFS);
     *ptr |= 0x00000000;
 
     //USART3_CR3 - no flow-control, offset 0x14
-    ptr   =  (uint32_t *)0x40004814;
+    ptr   =  (uint32_t *)(MY_USART3_BASE + USART3_CR3_OFS);
     *ptr |= 0x00000000;
 
     //USART3_CR1 - enable USART3 - [13]), offset 0x0c
-    ptr   =  (uint32_t *)0x4000480C;
+    ptr   =  (uint32_t *)(MY_USART3_BASE + USART3_CR1_OFS);
     *ptr |= 0x00002000;
 
 }
