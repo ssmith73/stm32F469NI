@@ -185,19 +185,30 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
  int main(void) {
 
+     /*
+      * Blink the blue LED at 1Hz, timed by TIM2 interrupts
+      */
+
      __disable_irq();
 
      initLeds(); //This enables the clk for ports, d,g and K
-     configureSysTick();
+     configureTimer2();
+
 
      __enable_irq();
 
-     while(1) { }
+    NVIC_EnableIRQ(TIM2_IRQn);
+    while(1) { }
 
  }
 
-void SysTick_Handler(void){
-   toggleLed(BLUE);
+void TIM2_IRQHandler(void){
+
+    uint32_t *ptr;
+    ptr = (uint32_t *)(TIM2_BASE +  TIM_SR);
+    *ptr = 0;
+
+   toggleLed(ORANGE);
 }
 
 

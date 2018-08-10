@@ -345,35 +345,42 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 #define STK_CALIB       (uint32_t)0x0C
 
 //Main Timers base addresses
-/*#define TIM1_BASE       (uint32_t)0x40010000 //APB2*/
-/*#define TIM2_BASE       (uint32_t)0x40000000 //APB1*/
-/*#define TIM3_BASE       (uint32_t)0x40000400 //APB1*/
-/*#define TIM4_BASE       (uint32_t)0x40000800 //APB1*/
-/*#define TIM5_BASE       (uint32_t)0x40000C00 //APB1*/
-/*#define TIM6_BASE       (uint32_t)0x40001000 //APB1*/
-/*#define TIM7_BASE       (uint32_t)0x40001400 //APB1*/
-/*#define TIM8_BASE       (uint32_t)0x40010400 //APB2*/
-/*#define TIM9_BASE       (uint32_t)0x40014000 //APB2*/
-/*#define TIM10_BASE      (uint32_t)0x40014400 //APB2*/
-/*#define TIMX11_BASE     (uint32_t)0x40014800 //APB2*/
-/*#define TIMX12_BASE     (uint32_t)0x40001800 //APB1*/
-/*#define TIMX13_BASE     (uint32_t)0x40001C00 //APB1*/
-/*#define TIMX14_BASE     (uint32_t)0x40002000 //APB1*/
+#define MY_TIM1_BASE    (uint32_t)0x40010000 //APB2
+#define MY_TIM2_BASE    (uint32_t)0x40000000 //APB1
+#define MY_TIM3_BASE    (uint32_t)0x40000400 //APB1
+#define MY_TIM4_BASE    (uint32_t)0x40000800 //APB1
+#define MY_TIM5_BASE    (uint32_t)0x40000C00 //APB1
+#define MY_TIM6_BASE    (uint32_t)0x40001000 //APB1
+#define MY_TIM7_BASE    (uint32_t)0x40001400 //APB1
+#define MY_TIM8_BASE    (uint32_t)0x40010400 //APB2
+#define MY_TIM9_BASE    (uint32_t)0x40014000 //APB2
+#define MY_TIM10_BASE   (uint32_t)0x40014400 //APB2
+#define MY_TIMX11_BASE  (uint32_t)0x40014800 //APB2
+#define MY_TIMX12_BASE  (uint32_t)0x40001800 //APB1
+#define MY_TIMX13_BASE  (uint32_t)0x40001C00 //APB1
+#define MY_TIMX14_BASE  (uint32_t)0x40002000 //APB1
 
 //Timer register offsets
-#define TIMX_CR1        (uint32_t)0x00
-#define TIMX_CR2        (uint32_t)0x04
-#define TIMX_SR         (uint32_t)0x10
-#define TIMX_CCMR1      (uint32_t)0x18
-#define TIMX_CCMR2      (uint32_t)0x1C
-#define TIMX_CCER       (uint32_t)0x20
-#define TIMX_CNT        (uint32_t)0x24
-#define TIMX_PSC        (uint32_t)0x28
-#define TIMX_ARR        (uint32_t)0x2C
-#define TIMX_CCR1       (uint32_t)0x34
-#define TIMX_CCR2       (uint32_t)0x38
-#define TIMX_CCR3       (uint32_t)0x3C
-#define TIMX_CCR4       (uint32_t)0x40
+#define TIM_CR1        (uint32_t)0x00
+#define TIM_CR2        (uint32_t)0x04
+#define TIM_SMCR       (uint32_t)0x08
+#define TIM_DIER       (uint32_t)0x0C
+#define TIM_SR         (uint32_t)0x10
+#define TIM_EGR        (uint32_t)0x14
+#define TIM_CCMR1      (uint32_t)0x18
+#define TIM_CCMR2      (uint32_t)0x1C
+#define TIM_CCER       (uint32_t)0x20
+#define TIM_CNT        (uint32_t)0x24
+#define TIM_PSC        (uint32_t)0x28
+#define TIM_ARR        (uint32_t)0x2C
+#define TIM_CCR1       (uint32_t)0x34
+#define TIM_CCR2       (uint32_t)0x38
+#define TIM_CCR3       (uint32_t)0x3C
+#define TIM_CCR4       (uint32_t)0x40
+#define TIM_DCR        (uint32_t)0x48
+#define TIM_DMAR       (uint32_t)0x4C
+#define TIM2_OR        (uint32_t)0x50
+#define TIM5_OR        (uint32_t)0x50
 
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
@@ -410,6 +417,26 @@ void delayMs(int n) {
     uint16_t i;
     for(;n>0;n--)
         for(i=0;i<3195;i++);
+}
+void configureTimer2() {
+    uint32_t *ptr;
+
+    
+    ptr = (uint32_t *)(MY_RCC_BASE + RCC_APB1ENR_OFS);
+    *ptr |= 1;  //enable TIM2 clk
+
+
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_PSC);
+    *ptr = 16000-1;  //Prescaler: /16000
+  
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_ARR);
+    *ptr = 1000-1;  //AutoReload: /1000
+
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_CR1);
+    *ptr |= 1;  //Enable counter
+
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_DIER);
+    *ptr |= 1;  //Enable counter
 }
 
 void configureSysTick() {
