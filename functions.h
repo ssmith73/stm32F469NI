@@ -378,6 +378,8 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 void    delayMs(int n);
 void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
+void    toggleLed(colours_t colour);
+void    configureSysTick(void);
 uint8_t usart3_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
@@ -410,6 +412,24 @@ void delayMs(int n) {
         for(i=0;i<3195;i++);
 }
 
+void configureSysTick() {
+
+    //Configure for 1Second Rollover
+    //@16Mhz system clock 1/16MHz=6.25ns
+    //x*6.25ns=1 - so x=1/6.25nS=16e6
+
+    uint32_t *ptr;
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_LOAD);
+    *ptr = 16000000- 1; //set reload value for 1
+
+
+    ptr = (uint32_t *)(SYSTICK_BASE +  STK_VAL);
+    *ptr = 0x0; //clear the current value register
+
+
+    ptr = (uint32_t *)SYSTICK_BASE + STK_CTRL;
+    *ptr = 0x7; //Enable timer, En interupt, clkSource=ProcessorClk (AHB)
+}
 void initLeds() {
 
     uint32_t *ptr;
@@ -429,6 +449,30 @@ void initLeds() {
     ptr   = (uint32_t *)0x40022800;
     *ptr |= 0x00000040; 
 }
+
+void toggleLed(colours_t colour) {
+    uint32_t *ptr;
+    switch(colour){
+        case GREEN:
+            ptr =  (uint32_t *)(GPIO_BASE + GPIOG_OFS + GPIO_ODR_OFS);
+            *ptr ^= 0x00000040;  //G6
+            break;
+        case ORANGE:
+            ptr =  (uint32_t *)(GPIO_BASE + GPIOD_OFS + GPIO_ODR_OFS);
+            *ptr ^= 0x00000010; //D4
+            break;
+        case RED:
+            ptr =  (uint32_t *)(GPIO_BASE + GPIOD_OFS + GPIO_ODR_OFS);
+            *ptr ^= 0x00000020; //D5
+            break;
+        case BLUE:
+            ptr =  (uint32_t *)(GPIO_BASE + GPIOK_OFS + GPIO_ODR_OFS);
+            *ptr ^= 0x00000008; //K3
+            break;
+    }
+
+}
+
 
 void driveLed(colours_t colour, pinState_t state) {
     uint32_t *ptr;

@@ -179,88 +179,25 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
 #include "functions.h"
 #include "stm32f4xx.h" 
+
 #define DELAY_IN_MS 250
 	
 
  int main(void) {
 
-     /*
-      * Using the User button (blue) on the discovery board
-      * This button has a pull-down resistor, so pressing it
-      * causes a logic-1 to be read - connected to PA0, shared
-      * with the gpio, and wakeup function
-      * When this happens toggle the ORANGE led 5 times
-      *
-      * Also going to use a wire, to connect PB14 to ground, so 
-      * here need to detect a falling edge - when this happens 
-      * toggle the blue LED 5 times
-      *
-      */
-
      __disable_irq();
 
-     uint32_t *ptr;
      initLeds(); //This enables the clk for ports, d,g and K
-     usart3_init();
+     configureSysTick();
 
-
-
-     //Enable the UART3 interrupt in the NVIC
-     //The number of the interrupt is found in the Vector table
-     //page 289 of the Reference Manual - here Position 39 is for 
-     //UART3  - set in ISER1[7]
-     //Also page 218 of Programmers manual
-
-
-    //USART3_CR1 - enable RX interrupt
-    ptr   =  (uint32_t *)(USART3_BASE + USART3_CR1_OFS);
-    *ptr |= 0x00000020;
-
-    ptr  = (uint32_t *)(NVIC_BASE + NVIC_ISER1);
-    *ptr |= 0x00000080; //Enable IRQ[39]
-
-     //NVIC_EnableIRQ(EXTI0_IRQn);
-     //Global interrupt enable
      __enable_irq();
-
 
      while(1) { }
 
  }
 
-void LED_Blink(uint8_t value) {
-
-    //cap the maximum blinks at 16
-    value %= 16;
-
-    for(;value>0;value--) {
-        driveLed(BLUE,CLEAR);
-        delayMs(100);
-        driveLed(BLUE,SETBIT);
-        delayMs(100);
-    }
-    delayMs(800);
+void SysTick_Handler(void){
+   toggleLed(BLUE);
 }
-
-void USART3_IRQHandler(void) {
-    //Obviously don't do delays in an IRQ!!
-    uint8_t c;
-    uint32_t *ptr;
-    uint32_t *data;
-    //ptr   =  (uint32_t *)(USART3_BASE + USART3_SR_OFS);
-
-    //data =   (uint32_t *)(USART3_BASE + USART3_DR_OFS);
-
-
-    if(* (uint32_t *)(USART3_BASE + USART3_SR_OFS) & 0x00000020) {
-        c = *(uint32_t *)(USART3_BASE + USART3_DR_OFS);
-        LED_Blink(c);
-    }
-
-    //interrupt bit clears when read, do no need to clear 
-    //it here like for the timers
-
-}
-
 
 
