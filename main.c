@@ -230,6 +230,9 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
 void LED_Blink(uint8_t value) {
 
+    //cap the maximum blinks at 16
+    value %= 16;
+
     for(;value>0;value--) {
         driveLed(BLUE,CLEAR);
         delayMs(100);
