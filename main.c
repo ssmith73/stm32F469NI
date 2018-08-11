@@ -176,39 +176,76 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 
  */
 
-
+#include<stdint.h>
+#include<stdio.h>
 #include "functions.h"
-#include "stm32f4xx.h" 
 
 #define DELAY_IN_MS 250
 	
+int main(void) {
 
- int main(void) {
+    /*
+     * Converts to analog input on PA0 (channel 1)
+     * Clock prescaler is left at 0 - (divide by 2) and 
+     * sampling time is also left at default of 3 cycles.
+     * Software trigger is used. the bit 8 conversion 
+     * result is used to toggle the LED
+     * For the full scale of the reference voltage the LED
+     * should flash 8 times
+     *
+     * On the STM32F469NI Disco board, ADC1/2 are routed in 
+     * through the EXT connector on pin 7, this is PA5
+     * 3.3V and gnd are routed to pin1/2
+     */
+    uint16_t result;
+    usart3_init();
+    initLeds();
+    configureAdc1_ch5();
+    
+    //Setup PA1 for analog input
+    uint32_t *ptr  = (uint32_t *)(MY_RCC_BASE + RCC_AHB1ENR_OFS);
+    *ptr |= 0x00000001; //enable gpioA clock
+    
+    ptr = (uint32_t *)(GPIO_BASE + GPIOA_OFS + GPIO_MODER_OFS);
+    *ptr |= 0x00000C00; //PA5 set for analog input
 
-     /*
-      * Blink the blue LED at 1Hz, timed by TIM2 interrupts
-      */
+    printf("ADC1 PA5 Connected to a Potentiometer 0 --> 3.3V\n");
 
-     __disable_irq();
+    while(1) {
 
-     initLeds(); //This enables the clk for ports, d,g and K
-     configureTimer2();
+        ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_CR2_OFS);
+        *ptr |=  0x40000000; // Start a conversion
+        //ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SR_OFS);
 
+        //uint32_t *dataReg = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_DR_OFS);
+        while((*(uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SR_OFS) & 0x2) )
+            result = *(uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_DR_OFS);
 
-     __enable_irq();
+        printf("The Converted value is: %d\r\n",result);
+        delayMs(100);
 
-    NVIC_EnableIRQ(TIM2_IRQn);
-    while(1) { }
-
- }
-
-void TIM2_IRQHandler(void){
-
-    uint32_t *ptr;
-    ptr = (uint32_t *)(TIM2_BASE +  TIM_SR);
-    *ptr = 0;
-
-   toggleLed(ORANGE);
+    }
 }
 
+struct __FILE {int handle;};
 
+FILE __stdin  = {0};
+FILE __stdout = {1};
+FILE __stderr = {2};
+
+int fgetc(FILE *f) {
+    int c;
+
+     c = usart3_read();
+
+    if(c == '\r') {
+        usart3_write(c);
+        c = '\n';
+    }
+    usart3_write(c);
+    return c;
+}
+
+int fputc(int c, FILE *f){
+    return usart3_write(c);
+}

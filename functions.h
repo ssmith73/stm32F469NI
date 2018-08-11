@@ -335,6 +335,38 @@ typedef enum {SETBIT,CLEAR} pinState_t;
 #define NVIC_STIR       (uint32_t)0xF00
 
 
+#define ADC_BASE        (uint32_t)0x40012000
+#define ADC1_BASE_OFS   (uint32_t)0x000
+#define ADC2_BASE_OFS   (uint32_t)0x100
+#define ADC3_BASE_OFS   (uint32_t)0x200
+#define ADC_COMMON_OFS  (uint32_t)0x300
+
+#define ADC_SR_OFS      (uint32_t)0x00
+#define ADC_CR1_OFS     (uint32_t)0x04
+#define ADC_CR2_OFS     (uint32_t)0x08
+#define ADC_SMPR1_OFS   (uint32_t)0x0C
+#define ADC_SMPR2_OFS   (uint32_t)0x10
+#define ADC_JOFRA1_OFS  (uint32_t)0x14
+#define ADC_JOFRA2_OFS  (uint32_t)0x18
+#define ADC_JOFRA3_OFS  (uint32_t)0x1C
+#define ADC_JOFRA4_OFS  (uint32_t)0x20
+#define ADC_HTR_OFS     (uint32_t)0x24
+#define ADC_LTR_OFS     (uint32_t)0x28
+#define ADC_SQR1_OFS    (uint32_t)0x2C
+#define ADC_SQR2_OFS    (uint32_t)0x30
+#define ADC_SQR3_OFS    (uint32_t)0x34
+#define ADC_JSQR_OFS    (uint32_t)0x38
+#define ADC_JDR1_OFS    (uint32_t)0x3C
+#define ADC_JDR2_OFS    (uint32_t)0x40
+#define ADC_JDR3_OFS    (uint32_t)0x44
+#define ADC_JDR4_OFS    (uint32_t)0x48
+#define ADC_DR_OFS      (uint32_t)0x4C
+
+//Common offset
+#define ADC_CSR_OFS     (uint32_t)0x00
+#define ADC_CCR_OFS     (uint32_t)0x04
+#define ADC_CDR_OFS     (uint32_t)0x08
+
 
 
 //SysTick timer
@@ -391,7 +423,27 @@ uint8_t usart3_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
 void    dlyMs(uint16_t numMs); //This uses the SysTick
-	
+void    configureAdc1_ch5(void);
+
+void    configureAdc1_ch5(void) {
+
+    uint32_t *ptr = (uint32_t *)(MY_RCC_BASE + RCC_APB2ENR_OFS);
+    *ptr = 0x00000100; //Enable ADC1 clock
+    
+    
+    ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_CR2_OFS);
+    *ptr = 0x00000000; //Right align 
+
+    ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SQR1_OFS);
+    *ptr = 0x00000000; //Clear the L[3:0 bits - 1 conversion in sequence
+
+    ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SQR3_OFS);
+    *ptr = 0x00000005; // 1'st conversion on channel 5  (PA5)
+
+    ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_CR2_OFS);
+    *ptr |=  0x00000001; //Enable ADC1
+
+}
 
 uint8_t usart3_read(void) {
     
