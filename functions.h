@@ -419,6 +419,7 @@ void    driveLed(colours_t colour, pinState_t state);
 void    initLeds(void);
 void    toggleLed(colours_t colour);
 void    configureSysTick(void);
+void    configureTimer2(void );
 uint8_t usart3_write(uint32_t c);
 uint8_t usart3_read(void);
 void    usart3_init(void);
@@ -479,16 +480,25 @@ void configureTimer2() {
 
 
     ptr = (uint32_t *)(MY_TIM2_BASE + TIM_PSC);
-    *ptr = 16000-1;  //Prescaler: /16000
+    *ptr = 16-1;  //Prescaler: /16000
   
     ptr = (uint32_t *)(MY_TIM2_BASE + TIM_ARR);
-    *ptr = 1000-1;  //AutoReload: /1000
+    *ptr = 10-1;  //AutoReload: /1000
+
+    //Operating in timer compare/capture mode, CCMR1[6:4] - OCM1
+    //Ouput compare Mode 1 [OCM1[2:0] = 0x33, is toggle
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_CCMR1);
+    *ptr = 0x30;  //Set output to toggle on match
+
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_CCER);
+    *ptr |= 1;  //Enable ch1 compare mode
+
+    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_CNT);
+    *ptr = 0;  //Clear counter
 
     ptr = (uint32_t *)(MY_TIM2_BASE + TIM_CR1);
-    *ptr |= 1;  //Enable counter
+    *ptr  = 1;  //Enable TIM2
 
-    ptr = (uint32_t *)(MY_TIM2_BASE + TIM_DIER);
-    *ptr |= 1;  //Enable counter
 }
 
 void configureSysTick() {

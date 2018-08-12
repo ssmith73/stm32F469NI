@@ -185,46 +185,38 @@ STEPS TO TAKE TO USE UART3 ON DISCO BOARD (for write)
 int main(void) {
 
     /*
-     * Converts to analog input on PA0 (channel 1)
-     * Clock prescaler is left at 0 - (divide by 2) and 
-     * sampling time is also left at default of 3 cycles.
-     * Software trigger is used. the bit 8 conversion 
-     * result is used to toggle the LED
-     * For the full scale of the reference voltage the LED
-     * should flash 8 times
-     *
-     * On the STM32F469NI Disco board, ADC1/2 are routed in 
-     * through the EXT connector on pin 7, this is PA5
-     * 3.3V and gnd are routed to pin1/2
+     * Uses timer 2 in compare mode to drive PA5. PA5 is configured
+     * as the output pin of the timer, when the timer counter rolls 
+     * over this pin toggles - at about 50KHz, stick a scope on PA5
+     * using the EXT connector on teh disco board to see the 
+     * resulting square wave
      */
     uint16_t result;
+    int data;
+    double volt, temp;
     usart3_init();
     initLeds();
-    configureAdc1_ch5();
+    configureTimer2();
     
-    //Setup PA1 for analog input
     uint32_t *ptr  = (uint32_t *)(MY_RCC_BASE + RCC_AHB1ENR_OFS);
     *ptr |= 0x00000001; //enable gpioA clock
     
     ptr = (uint32_t *)(GPIO_BASE + GPIOA_OFS + GPIO_MODER_OFS);
-    *ptr |= 0x00000C00; //PA5 set for analog input
+    *ptr &= ~0x00000C00; //PA5 MODER bits cleared
 
-    printf("ADC1 PA5 Connected to a Potentiometer 0 --> 3.3V\n");
+    ptr = (uint32_t *)(GPIO_BASE + GPIOA_OFS + GPIO_MODER_OFS);
+    *ptr |= 0x00000800; //PA5 set for alternative function 
+    
 
-    while(1) {
+    ptr = (uint32_t *)(GPIO_BASE + GPIOA_OFS + GPIO_AFRL_OFS);
+    *ptr &= ~0x00F00000; //PA5 set for alternative function  1
 
-        ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_CR2_OFS);
-        *ptr |=  0x40000000; // Start a conversion
-        //ptr = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SR_OFS);
+    ptr = (uint32_t *)(GPIO_BASE + GPIOA_OFS + GPIO_AFRL_OFS);
+    *ptr |= 0x00100000; //PA5 set for alternative function  1
 
-        //uint32_t *dataReg = (uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_DR_OFS);
-        while((*(uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_SR_OFS) & 0x2) )
-            result = *(uint32_t *)(ADC_BASE + ADC1_BASE_OFS + ADC_DR_OFS);
+    printf("PA5 toggled at 1Hz, check with scope\n");
 
-        printf("The Converted value is: %d\r\n",result);
-        delayMs(100);
-
-    }
+    while(1) { }
 }
 
 struct __FILE {int handle;};
